@@ -1,0 +1,344 @@
+{
+  "feature": "Retry Logic and Enhanced Error Handling for Quo API Node",
+  "workflow_type": "feature",
+  "workflow_rationale": "Adding new retry and error handling capabilities to existing Quo node. Introduces new behavior (automatic retries), configuration (retry toggle), and error handling logic. Enhances production reliability while maintaining backward compatibility via opt-out toggle.",
+
+  "phases": [
+    {
+      "id": "phase-1-retry-infrastructure",
+      "name": "Core Retry Infrastructure",
+      "type": "implementation",
+      "description": "Build the retry wrapper with exponential backoff and transient error detection",
+      "depends_on": [],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-1-1",
+          "description": "Create error classification utilities (transient vs permanent)",
+          "service": "main",
+          "files_to_modify": [],
+          "files_to_create": ["nodes/Quo/v1/errorUtils.ts"],
+          "patterns_from": ["nodes/Quo/v1/transport.ts"],
+          "verification": {
+            "type": "command",
+            "command": "npm run build",
+            "expected": "Build succeeds with no TypeScript errors"
+          },
+          "status": "pending",
+          "notes": "Create isTransientError() to detect HTTP 429 and 5xx errors. Use TypeScript type guards for error classification."
+        },
+        {
+          "id": "subtask-1-2",
+          "description": "Implement exponential backoff retry wrapper",
+          "service": "main",
+          "files_to_modify": ["nodes/Quo/v1/errorUtils.ts"],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "npm run build",
+            "expected": "Build succeeds, retryWithBackoff function compiles"
+          },
+          "status": "pending",
+          "notes": "Create retryWithBackoff<T>() with 1s → 2s → 4s backoff pattern, max 3 retries. Use async sleep to avoid blocking event loop."
+        },
+        {
+          "id": "subtask-1-3",
+          "description": "Wrap quoApiRequest with retry logic",
+          "service": "main",
+          "files_to_modify": ["nodes/Quo/v1/transport.ts"],
+          "files_to_create": [],
+          "patterns_from": ["nodes/Quo/v1/errorUtils.ts"],
+          "verification": {
+            "type": "command",
+            "command": "npm run build && npm run lint",
+            "expected": "Build and lint succeed, retry wrapper integrated"
+          },
+          "status": "pending",
+          "notes": "Modify quoApiRequest to use retryWithBackoff wrapper. Check node parameter for enableRetry setting."
+        }
+      ]
+    },
+    {
+      "id": "phase-2-error-enhancement",
+      "name": "Enhanced Error Handling",
+      "type": "implementation",
+      "description": "Extract API error details and provide user-friendly error messages",
+      "depends_on": ["phase-1-retry-infrastructure"],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-2-1",
+          "description": "Add rate limit header parsing",
+          "service": "main",
+          "files_to_modify": ["nodes/Quo/v1/errorUtils.ts"],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "npm run build",
+            "expected": "Build succeeds, parseRateLimitHeaders function compiles"
+          },
+          "status": "pending",
+          "notes": "Parse Retry-After and X-RateLimit-Reset headers. Handle multiple formats (seconds, timestamp) and missing headers gracefully."
+        },
+        {
+          "id": "subtask-2-2",
+          "description": "Create enhanced error message formatter",
+          "service": "main",
+          "files_to_modify": ["nodes/Quo/v1/errorUtils.ts"],
+          "files_to_create": [],
+          "patterns_from": ["nodes/Quo/v1/actions/router.ts"],
+          "verification": {
+            "type": "command",
+            "command": "npm run build",
+            "expected": "Build succeeds, formatApiError function compiles"
+          },
+          "status": "pending",
+          "notes": "Create formatApiError() to include: API error message, status code, user-friendly suggestions. Handle non-JSON responses (HTML/text errors)."
+        },
+        {
+          "id": "subtask-2-3",
+          "description": "Integrate error formatting into transport layer",
+          "service": "main",
+          "files_to_modify": ["nodes/Quo/v1/transport.ts"],
+          "files_to_create": [],
+          "patterns_from": ["nodes/Quo/v1/errorUtils.ts"],
+          "verification": {
+            "type": "command",
+            "command": "npm run build && npm run lint",
+            "expected": "Build and lint succeed, enhanced errors integrated"
+          },
+          "status": "pending",
+          "notes": "Use formatApiError() in catch blocks to provide detailed error context. Preserve full API error response for debugging."
+        }
+      ]
+    },
+    {
+      "id": "phase-3-configuration",
+      "name": "Retry Configuration",
+      "type": "implementation",
+      "description": "Add user-configurable retry toggle to node properties",
+      "depends_on": ["phase-1-retry-infrastructure"],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-3-1",
+          "description": "Add retry toggle to node properties",
+          "service": "main",
+          "files_to_modify": ["nodes/Quo/v1/QuoV1.node.ts"],
+          "files_to_create": [],
+          "patterns_from": ["nodes/Quo/v1/actions/message/message.operations.ts"],
+          "verification": {
+            "type": "command",
+            "command": "npm run build",
+            "expected": "Build succeeds, enableRetry property added to node"
+          },
+          "status": "pending",
+          "notes": "Add INodeProperties for 'enableRetry' boolean (default: true). Follow n8n property definition pattern with clear displayName and description."
+        },
+        {
+          "id": "subtask-3-2",
+          "description": "Wire retry setting to transport layer",
+          "service": "main",
+          "files_to_modify": ["nodes/Quo/v1/transport.ts"],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "npm run build && npm run lint",
+            "expected": "Build and lint succeed, retry toggle functional"
+          },
+          "status": "pending",
+          "notes": "Read enableRetry parameter in quoApiRequest. Skip retry wrapper when disabled, fail immediately on errors."
+        }
+      ]
+    },
+    {
+      "id": "phase-4-verification",
+      "name": "Testing and Verification",
+      "type": "implementation",
+      "description": "Create tests for retry logic, error handling, and configuration",
+      "depends_on": ["phase-2-error-enhancement", "phase-3-configuration"],
+      "parallel_safe": false,
+      "subtasks": [
+        {
+          "id": "subtask-4-1",
+          "description": "Create unit tests for error utilities",
+          "service": "main",
+          "files_to_modify": [],
+          "files_to_create": ["test/nodes/Quo/v1/errorUtils.test.ts"],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "npm test",
+            "expected": "All unit tests pass"
+          },
+          "status": "pending",
+          "notes": "Test: isTransientError (429, 5xx = true; 4xx = false), exponential backoff timing (1s, 2s, 4s), max retry limit (3 attempts), rate limit header parsing, error message formatting."
+        },
+        {
+          "id": "subtask-4-2",
+          "description": "Create integration tests for retry behavior",
+          "service": "main",
+          "files_to_modify": [],
+          "files_to_create": ["test/nodes/Quo/v1/transport.test.ts"],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "npm test",
+            "expected": "All integration tests pass"
+          },
+          "status": "pending",
+          "notes": "Test: transient error triggers retry, permanent error fails immediately, retry toggle works (enabled = retry, disabled = immediate fail), successful retry recovery, max retry exhaustion."
+        },
+        {
+          "id": "subtask-4-3",
+          "description": "Manual verification with n8n workflow",
+          "service": "main",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "manual",
+            "instructions": "1. Install node in n8n instance. 2. Create workflow with Quo node. 3. Simulate transient failures (mock 5xx). 4. Verify retry attempts in logs. 5. Test with retry disabled - should fail immediately. 6. Verify error messages include API details and suggestions."
+          },
+          "status": "pending",
+          "notes": "Verify in actual n8n environment: retry behavior, error message quality, configuration toggle, no regressions in existing operations."
+        }
+      ]
+    }
+  ],
+
+  "summary": {
+    "total_phases": 4,
+    "total_subtasks": 10,
+    "services_involved": ["main"],
+    "parallelism": {
+      "max_parallel_phases": 2,
+      "parallel_groups": [
+        {
+          "phases": ["phase-2-error-enhancement", "phase-3-configuration"],
+          "reason": "Both depend only on phase-1, work on different file sets (errorUtils.ts vs QuoV1.node.ts)"
+        }
+      ],
+      "recommended_workers": 1,
+      "speedup_estimate": "Single service, sequential implementation preferred for simplicity"
+    },
+    "startup_command": "source auto-claude/.venv/bin/activate && python auto-claude/run.py --spec 003 --parallel 1"
+  },
+
+  "verification_strategy": {
+    "risk_level": "medium",
+    "skip_validation": false,
+    "test_creation_phase": "post_implementation",
+    "test_types_required": ["unit", "integration"],
+    "security_scanning_required": false,
+    "staging_deployment_required": false,
+    "acceptance_criteria": [
+      "All existing tests pass",
+      "New unit tests for error utilities pass",
+      "Integration tests for retry behavior pass",
+      "No TypeScript compilation errors",
+      "ESLint passes with no violations",
+      "Manual n8n workflow verification successful"
+    ],
+    "verification_steps": [
+      {
+        "name": "TypeScript Compilation",
+        "command": "npm run build",
+        "expected_outcome": "Build succeeds with no errors",
+        "type": "build",
+        "required": true,
+        "blocking": true
+      },
+      {
+        "name": "Linting",
+        "command": "npm run lint",
+        "expected_outcome": "No ESLint violations",
+        "type": "lint",
+        "required": true,
+        "blocking": true
+      },
+      {
+        "name": "Unit Tests",
+        "command": "npm test",
+        "expected_outcome": "All tests pass",
+        "type": "test",
+        "required": true,
+        "blocking": true
+      },
+      {
+        "name": "Manual n8n Workflow Test",
+        "command": "Manual verification in n8n instance",
+        "expected_outcome": "Retry behavior works, error messages enhanced, toggle functional",
+        "type": "manual",
+        "required": true,
+        "blocking": true
+      }
+    ],
+    "reasoning": "Medium risk change requires unit tests for retry logic and integration tests for HTTP behavior. Error handling changes affect existing workflows, so thorough testing is critical."
+  },
+
+  "qa_acceptance": {
+    "unit_tests": {
+      "required": true,
+      "commands": ["npm test"],
+      "minimum_coverage": null
+    },
+    "integration_tests": {
+      "required": true,
+      "commands": ["npm test"],
+      "services_to_test": ["main"]
+    },
+    "e2e_tests": {
+      "required": false,
+      "commands": [],
+      "flows": []
+    },
+    "browser_verification": {
+      "required": false,
+      "pages": []
+    },
+    "database_verification": {
+      "required": false,
+      "checks": []
+    },
+    "manual_verification": {
+      "required": true,
+      "scenarios": [
+        {
+          "name": "Retry Behavior",
+          "steps": [
+            "Install node in n8n instance",
+            "Create workflow with Quo node",
+            "Mock transient failure (5xx)",
+            "Verify retry attempts logged",
+            "Verify eventual success after retry"
+          ],
+          "expected": "Retry attempts occur with exponential backoff (1s, 2s, 4s)"
+        },
+        {
+          "name": "Error Message Quality",
+          "steps": [
+            "Trigger various error types (429, 5xx, 4xx)",
+            "Review error messages in n8n UI",
+            "Verify API details included"
+          ],
+          "expected": "Error messages include status code, API error, and user-friendly suggestions"
+        },
+        {
+          "name": "Configuration Toggle",
+          "steps": [
+            "Test with retry enabled (default)",
+            "Test with retry disabled",
+            "Verify behavior changes"
+          ],
+          "expected": "Retry disabled = immediate failure, enabled = retry logic active"
+        }
+      ]
+    }
+  },
+
+  "qa_signoff": null
+}
