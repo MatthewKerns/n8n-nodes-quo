@@ -1,6 +1,6 @@
 {
   "name": "@arisegroup/n8n-nodes-quo",
-  "version": "0.1.0",
+  "version": "0.1.4",
   "description": "n8n community node for Quo (formerly OpenPhone) - business phone system API integration",
   "keywords": [
     "n8n-community-node-package",
@@ -38,7 +38,8 @@
     ],
     "nodes": [
       "dist/nodes/Quo/Quo.node.js",
-      "dist/nodes/Quo/QuoTrigger.node.js"
+      "dist/nodes/Quo/QuoTrigger.node.js",
+      "dist/nodes/Quo/QuoTool.node.js"
     ]
   },
   "devDependencies": {
