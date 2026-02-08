@@ -50,7 +50,7 @@ export class QuoTool implements INodeType {
 				displayName: 'Description',
 				name: 'description',
 				type: 'string',
-				default: 'Search Quo phone system for contacts, calls, messages, and users. Parameters: resource (contact|call|message|user), search (optional search term), phone (optional phone number), participants (optional participant phone number for filtering calls/messages), conversationId (optional for messages), userId (optional user ID), limit (optional result limit, default 10)',
+				default: 'Search Quo phone system for contacts, calls, messages, and users. Get call transcripts and summaries. Parameters: resource (contact|call|message|user), callId (get specific call with transcript and summary), search (optional search term), phone (optional phone number), participants (optional participant phone number for filtering calls/messages), conversationId (optional for messages), userId (optional user ID), limit (optional result limit, default 10)',
 				description:
 					'Used by the AI to understand when to call this tool',
 				typeOptions: {
@@ -70,6 +70,7 @@ export class QuoTool implements INodeType {
 				// For manual execution: fall back to node parameters
 				const inputData = items[i].json;
 				const resource = (inputData.resource as string) || (this.getNodeParameter('resource', i, 'contact') as string);
+				const callId = (inputData.callId as string) || (this.getNodeParameter('callId', i, '') as string);
 				const search = (inputData.search as string) || (this.getNodeParameter('search', i, '') as string);
 				const phone = (inputData.phone as string) || (this.getNodeParameter('phone', i, '') as string);
 				const participants = (inputData.participants as string) || (this.getNodeParameter('participants', i, '') as string);
@@ -79,6 +80,39 @@ export class QuoTool implements INodeType {
 
 				const credentials = await this.getCredentials('quoApi');
 				const apiKey = credentials.apiKey as string;
+
+				// If callId is provided with resource='call', get call details with transcript and summary
+				if (resource === 'call' && callId) {
+					const callUrl = `https://api.openphone.com/v1/calls/${callId}`;
+					const transcriptUrl = `https://api.openphone.com/v1/calls/${callId}/transcription`;
+					const summaryUrl = `https://api.openphone.com/v1/calls/${callId}/summary`;
+
+					const [callData, transcript, summary] = await Promise.allSettled([
+						this.helpers.httpRequest({
+							method: 'GET',
+							url: callUrl,
+							headers: { 'Authorization': apiKey, 'Content-Type': 'application/json' },
+						}),
+						this.helpers.httpRequest({
+							method: 'GET',
+							url: transcriptUrl,
+							headers: { 'Authorization': apiKey, 'Content-Type': 'application/json' },
+						}),
+						this.helpers.httpRequest({
+							method: 'GET',
+							url: summaryUrl,
+							headers: { 'Authorization': apiKey, 'Content-Type': 'application/json' },
+						}),
+					]);
+
+					const result: any = {};
+					if (callData.status === 'fulfilled') result.call = callData.value;
+					if (transcript.status === 'fulfilled') result.transcript = transcript.value;
+					if (summary.status === 'fulfilled') result.summary = summary.value;
+
+					returnData.push({ json: result });
+					continue;
+				}
 
 				// Build API request
 				let endpoint = 'contacts';
