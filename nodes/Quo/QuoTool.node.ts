@@ -136,6 +136,8 @@ export class QuoTool implements INodeType {
 					endpoint = 'users';
 					// Users endpoint supports: id, email, name search
 					if (search) params.append('name', search);
+				} else if (resource === 'phoneNumber') {
+					endpoint = 'phone-numbers';
 				}
 
 				if (limit) params.append('maxResults', limit.toString());
@@ -173,7 +175,7 @@ export class QuoTool implements INodeType {
 		const description = this.getNodeParameter('description', 0) as string;
 
 		const schema = z.object({
-			resource: z.enum(['contact', 'call', 'message', 'user']).describe('Resource type to query'),
+			resource: z.enum(['contact', 'call', 'message', 'user', 'phoneNumber']).describe('Resource type to query'),
 			callId: z.string().optional().describe('Call ID to get transcript and summary'),
 			search: z.string().optional().describe('Search term for contacts or users'),
 			phone: z.string().optional().describe('Phone number to search contacts'),
@@ -230,6 +232,8 @@ export class QuoTool implements INodeType {
 				} else if (input.resource === 'user') {
 					endpoint = 'users';
 					if (input.search) params.append('name', input.search);
+				} else if (input.resource === 'phoneNumber') {
+					endpoint = 'phone-numbers';
 				}
 
 				if (input.limit) params.append('maxResults', input.limit.toString());
