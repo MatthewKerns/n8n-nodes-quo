@@ -54,7 +54,7 @@ export class QuoTool implements INodeType {
 				displayName: 'Description',
 				name: 'description',
 				type: 'string',
-				default: 'Search Quo phone system for contacts, calls, messages, and users. Get call transcripts and summaries. Parameters: resource (contact|call|message|user), callId (get specific call with transcript and summary), search (optional search term), phone (optional phone number), participants (optional participant phone number for filtering calls/messages), conversationId (optional for messages), userId (optional user ID), limit (optional result limit, default 10)',
+				default: 'Search Quo phone system for contacts, calls, messages, and users. Get call transcripts and summaries. Parameters: resource (contact|call|message|user), callId (get specific call with transcript and summary), search (optional search term for contacts/users), phone (optional phone number), participants (REQUIRED for calls/messages - participant phone number in E.164 format like +16025551234), conversationId (optional for messages), limit (optional result limit, default 10)',
 				description:
 					'Used by the AI to understand when to call this tool',
 				typeOptions: {
@@ -79,7 +79,6 @@ export class QuoTool implements INodeType {
 				const phone = (inputData.phone as string) || (this.getNodeParameter('phone', i, '') as string);
 				const participants = (inputData.participants as string) || (this.getNodeParameter('participants', i, '') as string);
 				const conversationId = (inputData.conversationId as string) || (this.getNodeParameter('conversationId', i, '') as string);
-				const userId = (inputData.userId as string) || (this.getNodeParameter('userId', i, '') as string);
 				const limit = (inputData.limit as number) || (this.getNodeParameter('limit', i, 10) as number);
 
 				const credentials = await this.getCredentials('quoApi');
@@ -129,12 +128,10 @@ export class QuoTool implements INodeType {
 				} else if (resource === 'call') {
 					endpoint = 'calls';
 					if (participants) params.append('participants', participants);
-					if (userId) params.append('userId', userId);
 				} else if (resource === 'message') {
 					endpoint = 'messages';
 					if (participants) params.append('participants', participants);
 					if (conversationId) params.append('conversationId', conversationId);
-					if (userId) params.append('userId', userId);
 				} else if (resource === 'user') {
 					endpoint = 'users';
 					// Users endpoint supports: id, email, name search
@@ -179,10 +176,9 @@ export class QuoTool implements INodeType {
 			resource: z.enum(['contact', 'call', 'message', 'user']).describe('Resource type to query'),
 			callId: z.string().optional().describe('Call ID to get transcript and summary'),
 			search: z.string().optional().describe('Search term for contacts or users'),
-			phone: z.string().optional().describe('Phone number to search'),
-			participants: z.string().optional().describe('Participant phone number to filter calls/messages'),
+			phone: z.string().optional().describe('Phone number to search contacts'),
+			participants: z.string().optional().describe('REQUIRED for calls/messages: participant phone number in E.164 format (e.g., +16025551234)'),
 			conversationId: z.string().optional().describe('Conversation ID for messages'),
-			userId: z.string().optional().describe('User ID for filtering'),
 			limit: z.number().optional().describe('Result limit (default 10)'),
 		});
 
@@ -227,12 +223,10 @@ export class QuoTool implements INodeType {
 				} else if (input.resource === 'call') {
 					endpoint = 'calls';
 					if (input.participants) params.append('participants', input.participants);
-					if (input.userId) params.append('userId', input.userId);
 				} else if (input.resource === 'message') {
 					endpoint = 'messages';
 					if (input.participants) params.append('participants', input.participants);
 					if (input.conversationId) params.append('conversationId', input.conversationId);
-					if (input.userId) params.append('userId', input.userId);
 				} else if (input.resource === 'user') {
 					endpoint = 'users';
 					if (input.search) params.append('name', input.search);
