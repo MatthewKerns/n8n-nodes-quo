@@ -3,7 +3,11 @@ import type {
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
+	ISupplyDataFunctions,
+	SupplyData,
 } from 'n8n-workflow';
+import { DynamicStructuredTool } from '@langchain/core/tools';
+import { z } from 'zod';
 
 export class QuoTool implements INodeType {
 	description: INodeTypeDescription = {
@@ -29,8 +33,8 @@ export class QuoTool implements INodeType {
 				],
 			},
 		},
-		inputs: ['main'],
-		outputs: ['main'],
+		inputs: [],
+		outputs: ['ai_tool'],
 		outputNames: ['ai_tool'],
 		credentials: [
 			{
@@ -165,5 +169,89 @@ export class QuoTool implements INodeType {
 		}
 
 		return [returnData];
+	}
+
+	async supplyData(this: ISupplyDataFunctions): Promise<SupplyData> {
+		const name = this.getNodeParameter('name', 0) as string;
+		const description = this.getNodeParameter('description', 0) as string;
+
+		const schema = z.object({
+			resource: z.enum(['contact', 'call', 'message', 'user']).describe('Resource type to query'),
+			callId: z.string().optional().describe('Call ID to get transcript and summary'),
+			search: z.string().optional().describe('Search term for contacts or users'),
+			phone: z.string().optional().describe('Phone number to search'),
+			participants: z.string().optional().describe('Participant phone number to filter calls/messages'),
+			conversationId: z.string().optional().describe('Conversation ID for messages'),
+			userId: z.string().optional().describe('User ID for filtering'),
+			limit: z.number().optional().describe('Result limit (default 10)'),
+		});
+
+		const tool = new DynamicStructuredTool({
+			name,
+			description,
+			schema,
+			func: async (input) => {
+				const credentials = await this.getCredentials('quoApi');
+				const apiKey = credentials.apiKey as string;
+
+				// If callId is provided with resource='call', get call details
+				if (input.resource === 'call' && input.callId) {
+					const [callData, transcript, summary] = await Promise.allSettled([
+						fetch(`https://api.openphone.com/v1/calls/${input.callId}`, {
+							headers: { 'Authorization': apiKey, 'Content-Type': 'application/json' },
+						}).then(r => r.json()),
+						fetch(`https://api.openphone.com/v1/calls/${input.callId}/transcription`, {
+							headers: { 'Authorization': apiKey, 'Content-Type': 'application/json' },
+						}).then(r => r.json()),
+						fetch(`https://api.openphone.com/v1/calls/${input.callId}/summary`, {
+							headers: { 'Authorization': apiKey, 'Content-Type': 'application/json' },
+						}).then(r => r.json()),
+					]);
+
+					const result: any = {};
+					if (callData.status === 'fulfilled') result.call = callData.value;
+					if (transcript.status === 'fulfilled') result.transcript = transcript.value;
+					if (summary.status === 'fulfilled') result.summary = summary.value;
+
+					return JSON.stringify(result);
+				}
+
+				// Build API request for listing operations
+				const params = new URLSearchParams();
+				let endpoint = 'contacts';
+
+				if (input.resource === 'contact') {
+					endpoint = 'contacts';
+					if (input.search) params.append('search', input.search);
+					if (input.phone) params.append('phoneNumber', input.phone);
+				} else if (input.resource === 'call') {
+					endpoint = 'calls';
+					if (input.participants) params.append('participants', input.participants);
+					if (input.userId) params.append('userId', input.userId);
+				} else if (input.resource === 'message') {
+					endpoint = 'messages';
+					if (input.participants) params.append('participants', input.participants);
+					if (input.conversationId) params.append('conversationId', input.conversationId);
+					if (input.userId) params.append('userId', input.userId);
+				} else if (input.resource === 'user') {
+					endpoint = 'users';
+					if (input.search) params.append('name', input.search);
+				}
+
+				if (input.limit) params.append('maxResults', input.limit.toString());
+
+				const url = `https://api.openphone.com/v1/${endpoint}?${params}`;
+				const response = await fetch(url, {
+					headers: { 'Authorization': apiKey, 'Content-Type': 'application/json' },
+				});
+
+				const data = await response.json();
+				return JSON.stringify(data);
+			},
+		});
+
+		return {
+			response: tool,
+		};
 	}
 }

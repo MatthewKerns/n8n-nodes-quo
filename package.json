@@ -1,6 +1,6 @@
 {
   "name": "@arisegroup/n8n-nodes-quo",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "n8n community node for Quo (formerly OpenPhone) - business phone system API integration",
   "keywords": [
     "n8n-community-node-package",
@@ -42,6 +42,10 @@
       "dist/nodes/Quo/QuoTool.node.js"
     ]
   },
+  "dependencies": {
+    "@langchain/core": "^0.1.0",
+    "zod": "^3.22.4"
+  },
   "devDependencies": {
     "@types/node": "^20.10.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
@@ -54,6 +58,8 @@
     "typescript": "^5.3.0"
   },
   "peerDependencies": {
-    "n8n-workflow": "*"
+    "@langchain/core": "*",
+    "n8n-workflow": "*",
+    "zod": "*"
   }
 }
