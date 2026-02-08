@@ -11,12 +11,13 @@ export const messageOperations: INodeProperties = {
 		},
 	},
 	options: [
-		{
-			name: 'Send',
-			value: 'send',
-			description: 'Send a text message',
-			action: 'Send a text message',
-		},
+		// Write operations commented out - read-only mode
+		// {
+		// 	name: 'Send',
+		// 	value: 'send',
+		// 	description: 'Send a text message',
+		// 	action: 'Send a text message',
+		// },
 		{
 			name: 'Get',
 			value: 'get',
@@ -30,7 +31,7 @@ export const messageOperations: INodeProperties = {
 			action: 'Get many messages',
 		},
 	],
-	default: 'send',
+	default: 'get',
 };
 
 export const messageFields: INodeProperties[] = [
@@ -123,7 +124,6 @@ export const messageFields: INodeProperties[] = [
 		type: 'number',
 		typeOptions: {
 			minValue: 1,
-			maxValue: 100,
 		},
 		default: 50,
 		displayOptions: {

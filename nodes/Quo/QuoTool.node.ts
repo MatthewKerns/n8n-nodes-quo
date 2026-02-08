@@ -1,5 +1,6 @@
 import type {
 	IExecuteFunctions,
+	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
@@ -28,8 +29,8 @@ export class QuoTool implements INodeType {
 				],
 			},
 		},
-		inputs: [],
-		outputs: ['ai_tool'],
+		inputs: ['main'],
+		outputs: ['main'],
 		outputNames: ['ai_tool'],
 		credentials: [
 			{
@@ -61,20 +62,20 @@ export class QuoTool implements INodeType {
 
 	async execute(this: IExecuteFunctions) {
 		const items = this.getInputData();
-		const returnData: any[] = [];
+		const returnData: INodeExecutionData[] = [];
 
 		for (let i = 0; i < items.length; i++) {
 			try {
 				// For AI Tool: read from incoming JSON data (from AI agent)
 				// For manual execution: fall back to node parameters
-				const inputData = items[i].json as any;
-				const resource = inputData.resource || this.getNodeParameter('resource', i, 'contact') as string;
-				const search = inputData.search || this.getNodeParameter('search', i, '') as string;
-				const phone = inputData.phone || this.getNodeParameter('phone', i, '') as string;
-				const participants = inputData.participants || this.getNodeParameter('participants', i, '') as string;
-				const conversationId = inputData.conversationId || this.getNodeParameter('conversationId', i, '') as string;
-				const userId = inputData.userId || this.getNodeParameter('userId', i, '') as string;
-				const limit = inputData.limit || this.getNodeParameter('limit', i, 10) as number;
+				const inputData = items[i].json;
+				const resource = (inputData.resource as string) || (this.getNodeParameter('resource', i, 'contact') as string);
+				const search = (inputData.search as string) || (this.getNodeParameter('search', i, '') as string);
+				const phone = (inputData.phone as string) || (this.getNodeParameter('phone', i, '') as string);
+				const participants = (inputData.participants as string) || (this.getNodeParameter('participants', i, '') as string);
+				const conversationId = (inputData.conversationId as string) || (this.getNodeParameter('conversationId', i, '') as string);
+				const userId = (inputData.userId as string) || (this.getNodeParameter('userId', i, '') as string);
+				const limit = (inputData.limit as number) || (this.getNodeParameter('limit', i, 10) as number);
 
 				const credentials = await this.getCredentials('quoApi');
 				const apiKey = credentials.apiKey as string;

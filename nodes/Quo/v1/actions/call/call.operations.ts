@@ -100,7 +100,6 @@ export const callFields: INodeProperties[] = [
 		type: 'number',
 		typeOptions: {
 			minValue: 1,
-			maxValue: 100,
 		},
 		default: 50,
 		displayOptions: {

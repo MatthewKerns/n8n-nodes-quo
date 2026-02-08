@@ -32,6 +32,8 @@ export async function executeContactOperation(
 		}
 
 	} else if (operation === 'create') {
+throw new Error('Create operation is disabled in read-only mode. Write operations are not available for Quo node.');
+
 		const firstName = this.getNodeParameter('firstName', itemIndex) as string;
 		const lastName = this.getNodeParameter('lastName', itemIndex) as string;
 		const additionalFields = this.getNodeParameter('additionalFields', itemIndex, {}) as IDataObject;
@@ -57,6 +59,8 @@ export async function executeContactOperation(
 		responseData = await quoApiRequest.call(this, 'POST', '/contacts', body);
 
 	} else if (operation === 'update') {
+throw new Error('Update operation is disabled in read-only mode. Write operations are not available for Quo node.');
+
 		const contactId = this.getNodeParameter('contactId', itemIndex) as string;
 		const updateFields = this.getNodeParameter('updateFields', itemIndex, {}) as IDataObject;
 
@@ -84,6 +88,8 @@ export async function executeContactOperation(
 		responseData = await quoApiRequest.call(this, 'PATCH', `/contacts/${contactId}`, body);
 
 	} else if (operation === 'delete') {
+throw new Error('Delete operation is disabled in read-only mode. Write operations are not available for Quo node.');
+
 		const contactId = this.getNodeParameter('contactId', itemIndex) as string;
 
 		await quoApiRequest.call(this, 'DELETE', `/contacts/${contactId}`);

@@ -11,18 +11,19 @@ export const contactOperations: INodeProperties = {
 		},
 	},
 	options: [
-		{
-			name: 'Create',
-			value: 'create',
-			description: 'Create a new contact',
-			action: 'Create a contact',
-		},
-		{
-			name: 'Delete',
-			value: 'delete',
-			description: 'Delete a contact',
-			action: 'Delete a contact',
-		},
+		// Write operations commented out - read-only mode
+		// {
+		// 	name: 'Create',
+		// 	value: 'create',
+		// 	description: 'Create a new contact',
+		// 	action: 'Create a contact',
+		// },
+		// {
+		// 	name: 'Delete',
+		// 	value: 'delete',
+		// 	description: 'Delete a contact',
+		// 	action: 'Delete a contact',
+		// },
 		{
 			name: 'Get',
 			value: 'get',
@@ -35,12 +36,12 @@ export const contactOperations: INodeProperties = {
 			description: 'Get multiple contacts',
 			action: 'Get many contacts',
 		},
-		{
-			name: 'Update',
-			value: 'update',
-			description: 'Update a contact',
-			action: 'Update a contact',
-		},
+		// {
+		// 	name: 'Update',
+		// 	value: 'update',
+		// 	description: 'Update a contact',
+		// 	action: 'Update a contact',
+		// },
 	],
 	default: 'get',
 };
@@ -162,7 +163,6 @@ export const contactFields: INodeProperties[] = [
 		type: 'number',
 		typeOptions: {
 			minValue: 1,
-			maxValue: 100,
 		},
 		default: 50,
 		displayOptions: {

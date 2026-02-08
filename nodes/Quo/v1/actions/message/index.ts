@@ -11,6 +11,7 @@ export async function executeMessageOperation(
 	let responseData: IDataObject | IDataObject[];
 
 	if (operation === 'send') {
+		throw new Error('Send operation is disabled in read-only mode. Write operations are not available for Quo node.');
 		const phoneNumberId = this.getNodeParameter('phoneNumberId', itemIndex) as string;
 		const to = this.getNodeParameter('to', itemIndex) as string;
 		const content = this.getNodeParameter('content', itemIndex) as string;
