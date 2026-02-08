@@ -1,6 +1,6 @@
 {
   "name": "@arisegroup/n8n-nodes-quo",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "n8n community node for Quo (formerly OpenPhone) - business phone system API integration",
   "keywords": [
     "n8n-community-node-package",

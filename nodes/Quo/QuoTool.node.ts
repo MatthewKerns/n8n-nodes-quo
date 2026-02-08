@@ -74,6 +74,7 @@ export class QuoTool implements INodeType {
 				// For manual execution: fall back to node parameters
 				const inputData = items[i].json;
 				const resource = (inputData.resource as string) || (this.getNodeParameter('resource', i, 'contact') as string);
+				const phoneNumberId = (inputData.phoneNumberId as string) || (this.getNodeParameter('phoneNumberId', i, '') as string);
 				const callId = (inputData.callId as string) || (this.getNodeParameter('callId', i, '') as string);
 				const search = (inputData.search as string) || (this.getNodeParameter('search', i, '') as string);
 				const phone = (inputData.phone as string) || (this.getNodeParameter('phone', i, '') as string);
@@ -127,9 +128,11 @@ export class QuoTool implements INodeType {
 					if (phone) params.append('phoneNumber', phone);
 				} else if (resource === 'call') {
 					endpoint = 'calls';
+					if (phoneNumberId) params.append('phoneNumberId', phoneNumberId);
 					if (participants) params.append('participants', participants);
 				} else if (resource === 'message') {
 					endpoint = 'messages';
+					if (phoneNumberId) params.append('phoneNumberId', phoneNumberId);
 					if (participants) params.append('participants', participants);
 					if (conversationId) params.append('conversationId', conversationId);
 				} else if (resource === 'user') {
@@ -176,6 +179,7 @@ export class QuoTool implements INodeType {
 
 		const schema = z.object({
 			resource: z.enum(['contact', 'call', 'message', 'user', 'phoneNumber']).describe('Resource type to query'),
+			phoneNumberId: z.string().optional().describe('Phone number ID (format: PN...) - REQUIRED for calls/messages. Get from phoneNumber resource first.'),
 			callId: z.string().optional().describe('Call ID to get transcript and summary'),
 			search: z.string().optional().describe('Search term for contacts or users'),
 			phone: z.string().optional().describe('Phone number to search contacts'),
@@ -224,9 +228,11 @@ export class QuoTool implements INodeType {
 					if (input.phone) params.append('phoneNumber', input.phone);
 				} else if (input.resource === 'call') {
 					endpoint = 'calls';
+					if (input.phoneNumberId) params.append('phoneNumberId', input.phoneNumberId);
 					if (input.participants) params.append('participants', input.participants);
 				} else if (input.resource === 'message') {
 					endpoint = 'messages';
+					if (input.phoneNumberId) params.append('phoneNumberId', input.phoneNumberId);
 					if (input.participants) params.append('participants', input.participants);
 					if (input.conversationId) params.append('conversationId', input.conversationId);
 				} else if (input.resource === 'user') {
