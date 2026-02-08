@@ -54,7 +54,7 @@ export class QuoTool implements INodeType {
 				displayName: 'Description',
 				name: 'description',
 				type: 'string',
-				default: 'Search Quo phone system for contacts, calls, messages, and users. Get call transcripts and summaries. Parameters: resource (contact|call|message|user), callId (get specific call with transcript and summary), search (optional search term for contacts/users), phone (optional phone number), participants (REQUIRED for calls/messages - participant phone number in E.164 format like +16025551234), conversationId (optional for messages), limit (optional result limit, default 10)',
+				default: 'Search Quo phone system for contacts, calls, messages, and users. CRITICAL: To get what was discussed in a call, you MUST use callId parameter - it returns full transcript and AI summary. Two-step process: (1) List calls to get call IDs, (2) Query with callId to get transcript/summary. Parameters: resource (contact|call|message|user|phoneNumber), phoneNumberId (REQUIRED for listing calls/messages), callId (CRITICAL: use this to get call transcript and AI-generated summary of what was discussed), search (optional), phone (optional), participants (REQUIRED for calls/messages - E.164 format like +16025551234), conversationId (optional), limit (optional, default 10)',
 				description:
 					'Used by the AI to understand when to call this tool',
 				typeOptions: {
